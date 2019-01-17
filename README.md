@@ -20,3 +20,4 @@ T H I C A L M A N M O T H M Y
 Y T H I C A L M A N M O T H M 
 M Y T H I C A L M A N M O T H 
 ```
+![The Absolute Boy](https://proxy.duckduckgo.com/iu/?u=http%3A%2F%2Fwww.tasteofcinema.com%2Fwp-content%2Fuploads%2F2014%2F08%2FMothra.jpg&f=1)
