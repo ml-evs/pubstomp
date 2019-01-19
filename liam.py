@@ -8,8 +8,19 @@ import pymongo as db
 from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize, word_tokenize
 
+with open("most_common.txt") as f:
+    most_common = f.readlines()
+most_common = [x.strip() for x in most_common]
+
 # ======================
 # Misc helper functions
+
+def remove_most_common(s):
+    """
+    Given string of text, removes any words which feature in the list of 100 most common words
+    """
+    wordlist = s.split()
+    return ' '.join([word for word in wordlist if not word in most_common])
 
 def remove_uniques(L):
     """
@@ -54,6 +65,7 @@ def all_abstracts_to_wordlist(abstract):
     Converts all abstracts to a list of unique and useful words contained within them
     """
     abstract = abstract.lower()
+    abstract = remove_most_common(abstract)
     words = re.sub('\s+', ' ', abstract).strip() # replace all whitespaces with a single space
     wordlist = word_tokenize(words)
     # Stem -- remove suffixes etc. Uses simple Porter stemmer
@@ -73,6 +85,7 @@ def abstract_to_wordlist(abstract):
     Same as all_abstracts_to_wordlist, although it doesn't remove unique instances of words
     """
     abstract = abstract.lower()
+    abstract = remove_most_common(abstract)
     words = re.sub('\s+', ' ', abstract).strip() # replace all whitespaces with a single space
     wordlist = word_tokenize(words)
     # Stem -- remove suffixes etc. Uses simple Porter stemmer
