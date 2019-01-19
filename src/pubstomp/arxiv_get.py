@@ -17,25 +17,31 @@ import pymongo
 import requests
 
 
-def mongo_setup(db_name='pubstomp'):
+def mongo_setup(db_name='pubstomp', coll_name=None):
     """ Connects to MongoDB, counts up from zero and creates a collection with the
-    next highest int, n, in the name arXiV_v{n}.
+    next highest int, n, in the name arXiV_v{n}, unless specified by coll_name.
 
     Keyword arguments:
         db_name (str): name of the MongoDB database to set up.
+        coll_name (str): name of the desired MongoDB collection to connect to.
 
     """
 
     client = pymongo.MongoClient()
     db = client[db_name]
-    found = False
-    version = 0
-    while not found:
-        coll_name = f'arXiv_v{version}'
+
+    if coll_name is None:
+        found = False
+        version = 0
+        while not found:
+            coll_name = f'arXiv_v{version}'
+            if coll_name in db.list_collection_names():
+                version += 1
+            else:
+                found = True
+    else:
         if coll_name in db.list_collection_names():
-            version += 1
-        else:
-            found = True
+            logging.debug(f'Using existing collection {coll_name}.')
 
     logging.debug(f'Creating MongoDB collection {coll_name} inside database {db_name}.')
 
@@ -97,7 +103,7 @@ def parse_xml_record(xml_record):
     return record
 
 
-def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, num_failures=0):
+def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, num_failures=0, hot_start=False):
     """ Recursively scrape arXiv's OAI metadata endpoint into a MongoDB collection.
 
     Parameters:
@@ -107,13 +113,26 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
         resumption_token (str): token required to restart incomplete queries.
         timeout (int): time in seconds between queries to manage flow control.
         num_failures (int): the number of failures since last successful query.
+        hot_start (bool): query for documents added since last previous date existing 
+            in collection.
+
 
     """
 
-    if resumption_token is None:
-        base_request = 'http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=oai_dc'
+    last_date = None
+    if hot_start:
+        last_date = mongo_collection.find_one({}, sort=[('_id', pymongo.DESCENDING)])['header_date']
+        logging.debug(f'Found last date {last_date}')
+
+    base_request = 'http://export.arxiv.org/oai2?verb=ListRecords'
+    if resumption_token is not None:
+        base_request += '&resumptionToken={}'.format(resumption_token)
+
     else:
-        base_request = 'http://export.arxiv.org/oai2?verb=ListRecords&resumptionToken={}'.format(resumption_token)
+        if last_date is not None:
+            base_request += '&from={}'.format(last_date.strftime('%Y-%m-%d'))
+
+        base_request += '&metadataPrefix=oai_dc'
 
     logging.debug(f'Submitting request {base_request}')
     request = requests.get(base_request)
@@ -127,6 +146,7 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
         return recursive_arxiv_scrape(mongo_collection,
                                       resumption_token=resumption_token,
                                       timeout=timeout,
+                                      hot_start=hot_start,
                                       num_failures=num_failures+1)
 
     logging.debug('Parsing XML...')
@@ -155,7 +175,7 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
     time.sleep(timeout)
 
     if new_resumption_token is not None:
-        return recursive_arxiv_scrape(mongo_collection,
+        return recursive_arxiv_scrape(mongo_collection, hot_start=hot_start,
                                       resumption_token=new_resumption_token,
                                       timeout=timeout)
 
@@ -165,6 +185,6 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    collection = mongo_setup()
-    recursive_arxiv_scrape(collection,
+    collection = mongo_setup(coll_name='arXiv_v1')
+    recursive_arxiv_scrape(collection, hot_start=True,
                            timeout=10)
