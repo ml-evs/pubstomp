@@ -51,7 +51,7 @@ def get_abstracts(M=100):
     Abstracts are represented as a list of strings. Each list element is a single abstract.
     """
     db_client = db.MongoClient()
-    papers = db_client.pubstomp.arXiv_v1.find()
+    papers = db_client.pubstomp.arXiv_v1.aggregate([{'$sample': {'size': M}}])
 
     abstracts = []
     for i,paper in enumerate(papers):
@@ -141,9 +141,9 @@ if __name__ == '__main__':
     for i,abstract in enumerate(abstracts):
         X[i] = to_word_space(abstract,wordmap)
 
-    choice = int(input("Choose paper (max " + str(M) + "):\n"))
-    print(abstracts[choice])
-    y = to_word_space(abstracts[choice],wordmap)
+    print("Reference paper:")
+    print(abstracts[0])
+    y = to_word_space(abstracts[0],wordmap)
     print("\n==============================\n")
     similarities = get_similarities(X,y)
     # Get top 10 (not counting self, which should give the maximum similarity
