@@ -35,4 +35,38 @@ for doc in physics:
         "physics"
      ])
 
-print(data)
+
+
+import spacy
+
+# Load English tokenizer, tagger, parser, NER and word vectors
+nlp = spacy.load('en_core_web_sm')
+
+# Determine semantic similarities
+
+nlpData = [[x, nlp(y), z] for x,y,z in data]
+triangle = []
+for i, row in enumerate(nlpData):
+    triRow = []
+    for j, row2 in enumerate(nlpData[:i]):
+        print(i,j)
+        triRow.append(row[1].similarity(row2[1]))
+# print(doc1.text, doc2.text, similarity)
+    triangle.append(triRow)
+
+with open("tri.txt", "w") as flines:
+    flines.write("\n".join(" ".join(map(str, x)) for x in triangle))
+print(triangle)
+
+square = []
+for i, row in enumerate(nlpData):
+    squareRow = []
+    for j, row2 in enumerate(nlpData):
+        # print(i,j)
+        squareRow.append(row[1].similarity(row2[1]))
+# print(doc1.text, doc2.text, similarity)
+    square.append(squareRow)
+
+with open("square.txt", "w") as flines:
+    flines.write("\n".join(" ".join(map(str, x)) for x in square))
+print(square)

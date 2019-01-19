@@ -1,6 +1,6 @@
 .*.un~
 *~
-
+.*.swp
 materials.json
 physics.json
 maths.json
