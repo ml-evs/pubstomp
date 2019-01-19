@@ -100,6 +100,9 @@ def parse_xml_record(xml_record):
             for desc in meta.iter(tag='{http://purl.org/dc/elements/1.1/}description'):
                 record['description'].append(desc.text)
 
+            for title in meta.iter(tag='{http://purl.org/dc/elements/1.1/}title'):
+                record['title'] = title.text
+
     return record
 
 
@@ -113,7 +116,7 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
         resumption_token (str): token required to restart incomplete queries.
         timeout (int): time in seconds between queries to manage flow control.
         num_failures (int): the number of failures since last successful query.
-        hot_start (bool): query for documents added since last previous date existing 
+        hot_start (bool): query for documents added since last previous date existing
             in collection.
 
 
