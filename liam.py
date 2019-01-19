@@ -11,19 +11,13 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 # ======================
 # Misc helper functions
 
-def get_uniques(L):
+def remove_uniques(L):
     """
-    Given list L of words, return list of words that only appear once in the list
+    Given list L of words, return list of words that appear at least twice in the list
     """
     d = collections.defaultdict(int)
     for x in L: d[x] += 1
-    return [x for x in L if d[x] == 1]
-
-def remove_intersection(L1,L2):
-    """
-    Given two lists L1 and L2 of words, return list of words that only appear in one of L1 or L2
-    """
-    return [l for l in L2 if l not in L1] + [l for l in L1 if l not in L2]
+    return [x for x in L if d[x] > 1]
 
 def remove_dupes(L):
     """
@@ -51,14 +45,15 @@ def get_abstracts(M=100):
     abstracts = []
     for i,paper in enumerate(papers):
         abstracts.append(max(paper['description'],key=len))
-        if i == M:
+        if i == M-1:
             break
     return abstracts
 
-def abstract_to_wordlist(abstract):
+def all_abstracts_to_wordlist(abstract):
     """
-    Converts an abstract to a list of unique and useful words contained within in
+    Converts all abstracts to a list of unique and useful words contained within them
     """
+    abstract = abstract.lower()
     words = re.sub('\s+', ' ', abstract).strip() # replace all whitespaces with a single space
     wordlist = word_tokenize(words)
     # Stem -- remove suffixes etc. Uses simple Porter stemmer
@@ -67,8 +62,24 @@ def abstract_to_wordlist(abstract):
     # Remove any words that contain dollar signs, backslashes, numerals, etc.
     wordlist = remove_non_words(wordlist)
     # Remove any unique words (those that only appear once across all abstracts)
-    unique_wordlist = get_uniques(wordlist)
-    wordlist = remove_intersection(wordlist,unique_wordlist)
+    wordlist = remove_uniques(wordlist)
+    # Remove duplicates
+    wordlist = remove_dupes(wordlist)
+    return wordlist
+
+def abstract_to_wordlist(abstract):
+    """
+    Converts an abstract to a list of useful words contained within in
+    Same as all_abstracts_to_wordlist, although it doesn't remove unique instances of words
+    """
+    abstract = abstract.lower()
+    words = re.sub('\s+', ' ', abstract).strip() # replace all whitespaces with a single space
+    wordlist = word_tokenize(words)
+    # Stem -- remove suffixes etc. Uses simple Porter stemmer
+    stemmer = PorterStemmer()
+    wordlist = [stemmer.stem(w) for w in wordlist]
+    # Remove any words that contain dollar signs, backslashes, numerals, etc.
+    wordlist = remove_non_words(wordlist)
     # Remove duplicates
     wordlist = remove_dupes(wordlist)
     return wordlist
@@ -80,7 +91,7 @@ def get_word_space(abstracts):
     """
     # Convert all abstracts to one long string
     words = reduce((lambda x,y: x+y),abstracts)
-    wordlist = abstract_to_wordlist(words)
+    wordlist = all_abstracts_to_wordlist(words)
     # Create mapping
     return dict([[v,k] for k,v in enumerate(wordlist)])
 
@@ -90,7 +101,7 @@ def to_word_space(abstract,wordmap):
     Returns a numpy array
     """
     wordlist = abstract_to_wordlist(abstract)
-    intlist  = [wordmap[w] for w in wordlist]
+    intlist  = [wordmap[w] for w in wordlist if w in wordmap.keys()]
     return np.array([1 if i in intlist else 0 for i in range(len(wordmap))])
 
 def get_similarities(X,y):
@@ -104,7 +115,10 @@ def get_similarities(X,y):
     
 
 if __name__ == '__main__':
-    abstracts = get_abstracts(500)
+    num_abstracts = -1
+    while num_abstracts < 0:
+        num_abstracts = int(input("Choose number of abstracts:\n"))
+    abstracts = get_abstracts(num_abstracts)
     M = len(abstracts) # Number of examples
     print("Num examples: ",M)
     wordmap = get_word_space(abstracts)
@@ -113,14 +127,12 @@ if __name__ == '__main__':
     X = np.zeros((M,N))
     for i,abstract in enumerate(abstracts):
         X[i] = to_word_space(abstract,wordmap)
-    choice = -1
-    while choice < 0 or choice >= M:
-        choice = int(input("Choose paper number (max" + str(M) + ")\n"))
-    print("You chose:")
+
+    choice = int(input("Choose paper (max " + str(M) + "):\n"))
     print(abstracts[choice])
+    y = to_word_space(abstracts[choice],wordmap)
     print("\n==============================\n")
-    similarities = get_similarities(X,X[choice])
-    print(similarities)
+    similarities = get_similarities(X,y)
     # Get top 10 (not counting self, which should give the maximum similarity
     top_10 = sorted(range(len(similarities)), key=lambda i: similarities[i])[-11:-1]
     top_10.reverse()
