@@ -97,7 +97,7 @@ def parse_xml_record(xml_record):
     return record
 
 
-def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=20, num_failures=0):
+def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, num_failures=0):
     """ Recursively scrape arXiv's OAI metadata endpoint into a MongoDB collection.
 
     Parameters:
@@ -124,7 +124,10 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=20, 
             raise RuntimeError(f'Requests fell over for 3rd time in a row, with status code {request.status_code}.\n\nFull output: {request.text}')
 
         time.sleep(timeout)
-        return recursive_arxiv_scrape(mongo_collection, resumption_token=resumption_token, num_failures=num_failures+1)
+        return recursive_arxiv_scrape(mongo_collection,
+                                      resumption_token=resumption_token,
+                                      timeout=timeout,
+                                      num_failures=num_failures+1)
 
     logging.debug('Parsing XML...')
     xml_tree = ElementTree.fromstring(request.text)
@@ -152,7 +155,9 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=20, 
     time.sleep(timeout)
 
     if new_resumption_token is not None:
-        return recursive_arxiv_scrape(mongo_collection, resumption_token=new_resumption_token)
+        return recursive_arxiv_scrape(mongo_collection,
+                                      resumption_token=new_resumption_token,
+                                      timeout=timeout)
 
     logging.info('Scrape complete!')
     return
@@ -160,6 +165,6 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=20, 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    mongo_clean()
     collection = mongo_setup()
-    recursive_arxiv_scrape(collection, timeout=20)
+    recursive_arxiv_scrape(collection,
+                           timeout=10)
