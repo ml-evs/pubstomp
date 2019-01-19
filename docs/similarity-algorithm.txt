@@ -1,0 +1,9 @@
+
+- Get abstracts
+- run through stemmer (see nltk stemming docs)
+- remove repeats of words
+- subtract (stemmed) top 100/300/1000 most common words (this should be left as a hyperparameter for tuning)
+- should have list of N words remaining
+- represent each abstract as an N-vector of 1's and 0's: 1 if a word occurs, 0 otherwise
+- to get similarity, compute |X-Y| for abstracts X and Y. Low values of more similar.
+- compute similarity with every other abstract, return 10 most similar.

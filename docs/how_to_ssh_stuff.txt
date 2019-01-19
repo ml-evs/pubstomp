@@ -1,0 +1,10 @@
+ssh mothman@34.76.202.162 jelliot
+ ssh -N -f -L localhost:27017:localhost:27017 mothman@34.76.202.162
+ import pymongo
+>>> client = pymongo.MongoClient()
+>>> client
+MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True)
+>>> client.pubstomp.arXiv_v1.find_one()
+{'_id': ObjectId('5c41d0e1df84a304bc85af96'), 'arxiv_id': '0704.0002', 'header_date': datetime.datetime(2008, 12, 13, 0, 0), 'creators': ['Streinu, Ileana', 'Theran, Louis'], 'dates': [datetime.datetime(2007, 3, 30, 0, 0), datetime.datetime(2008, 12, 13, 0, 0)], 'subject': ['Mathematics - Combinatorics', 'Computer Science - Computational Geometry', '05C85', '05C70', '68R10', '05B35'], 'description': ['  We describe a new algorithm, the $(k,\\ell)$-pebble game with colors, and use\nit obtain a characterization of the family of $(k,\\ell)$-sparse graphs and\nalgorithmic solutions to a family of problems concerning tree decompositions of\ngraphs. Special instances of sparse graphs appear in rigidity theory and have\nreceived increased attention in recent years. In particular, our colored\npebbles generalize and strengthen the previous results of Lee and Streinu and\ngive a new proof of the Tutte-Nash-Williams characterization of arboricity. We\nalso present a new decomposition that certifies sparsity based on the\n$(k,\\ell)$-pebble game with colors. Our work also exposes connections between\npebble game algorithms and previous sparse graph algorithms by Gabow, Gabow and\nWestermann and Hendrickson.\n', 'Comment: To appear in Graphs and Combinatorics']}
+>>> client.pubstomp.arXiv_v1.find()
+<pymongo.cursor.Cursor object at 0x7fd5b85e2ef0>
