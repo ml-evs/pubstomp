@@ -26,9 +26,7 @@ class Document:
         """ Gets longest item in `description`. """
         try:
             if self._abstract is None:
-                tmp_ind = max([(ind, len(desc)) for ind, desc in enumerate(self._raw['description'])],
-                              key=lambda x: x[1])
-                self._abstract = self._raw['description'][tmp_ind].strip()
+                self._abstract = max(self._raw['description'], key=len).replace("\n", " ").strip()
         except KeyError:
             print('Paper is missing abstract!')
 
@@ -43,5 +41,3 @@ class Document:
         except KeyError:
             print('Paper is missing title!')
         return self._title
-
-
