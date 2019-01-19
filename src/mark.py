@@ -110,11 +110,11 @@ def calculate_word_vectors(abstracts):
       raise ValueError('FATAL ERROR: Process on node (7) caused SEGFAULT: 0x18395827')
     word = vocab[0]
     count = int(vocab[1])
-    vect = [float(x) for x in vector[1:]]
+    vect = np.array([float(x) for x in vector[1:]])
     norm = np.linalg.norm(vect)
     
     # Divide the vector by its norm squared, to rank in order of importance.
-    vect = [x/norm**2 for x in vect]
+    vect = vect/norm**2
     norm = 1/norm
     
     word_vectors.append({'word':word,
@@ -148,6 +148,11 @@ def make_abstract(abstract,word_vectors):
   output['norm'] = np.sqrt(norm)
   return output
 
+def calculate_abstract_vector(abstract,word_vectors):
+  output = np.sum([word_vectors[i]['vector'] for i in abstract['indices']])
+  output = output / np.linalg.norm(output)
+  return output
+
 def get_overlap(this,that,word_overlaps):
   '''
   Calculates the overlap between two abstracts, using the word vectors.
@@ -171,7 +176,7 @@ def main():
   '''
   
   # Constants.
-  no_entries = 300
+  no_entries = 30
   
   # Set up data getter from server.
   client = pymongo.MongoClient()
@@ -212,7 +217,10 @@ def main():
   print()
   print('Abstracted abstracts')
   
-  # Calculate overlap matrices.
+  # Calculate abstract vectors.
+  abstract_vectors = [calculate_abstract_vector(abstract, word_vectors) for abstract in abstracts]
+  
+  # Calculate overlap matrix.
   overlaps = []
   for i,abstracti in enumerate(abstracts):
     overlaps.append([])
@@ -221,8 +229,21 @@ def main():
       
       overlaps[-1].append(overlap)
   
+  # Calculate overlap matrix.
+  overlaps = []
+  for i in abstract_vectors:
+    overlaps.append([])
+    for j in abstract_vectors:
+      print(i)
+      print(j)
+      overlaps[-1].append(np.dot(i,j))
+  
   print()
   print('Generated overlap matrix.')
+  
+  # Write out overlap matrix
+  output = [' '.join([str(x) for x in line]) for line in overlaps]
+  write_file('overlap_matrix.dat', output)
   
   seaborn.heatmap(overlaps)
   plt.show()
