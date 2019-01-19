@@ -4,6 +4,9 @@ import sys
 import pymongo
 import json
 import subprocess
+import seaborn
+import matplotlib.pyplot as plt
+import numpy as np
 
 def write_file(filename, lines):
   '''
@@ -34,18 +37,17 @@ def clean_abstract(abstract):
   
   return abstract
 
-def main():
+def calculate_word_vectors(abstracts):
   '''
-  Does stuff as what Mark wrote.
+  Takes a list of abstracts, and returns word vectors for them.
   '''
   
   # Constants.
-  no_entries = 100
   glove_dir = '/home/mark/hc-4d/GloVe/build/'
   glove_verbose = 2
   
   # Glove vocab_count options.
-  vocab_min_count = 5
+  vocab_min_count = 2
   
   # Glove cooccur options.
   cooccur_memory = 4.0
@@ -57,23 +59,8 @@ def main():
   glove_max_iter = 15
   glove_binary = 2
   
-  # Set up data getter from server.
-  client = pymongo.MongoClient()
-  data_getter = client.pubstomp.arXiv_v1.find()
-  
-  # Grab the first no_entries entries.
-  data = []
-  for i,entry in enumerate(data_getter):
-    data.append(entry)
-    if i==99:
-      break
-  
-  # Concatenate abstracts, and write them to abstracts.txt.
-  # The abstract is the longest string in each description.
-  abstracts = []
-  for datum in data:
-    abstracts.append(clean_abstract(max(datum['description'],key=len)))
-  write_file('abstracts.txt', abstracts)
+  # Write out abstracts to file.
+  write_file('abstracts.txt', [x['string'] for x in abstracts])
   
   # Run vocab parser on abstracts.
   command  = glove_dir+'vocab_count'
@@ -117,17 +104,128 @@ def main():
   vocab_file = read_file('vocab.txt')
   vectors = read_file('vectors.txt')
   
-  word_vectors = {}
+  word_vectors = []
   for vocab, vector in zip(vocab_file, vectors):
     if vocab[0]!=vector[0]:
       raise ValueError('FATAL ERROR: Process on node (7) caused SEGFAULT: 0x18395827')
     word = vocab[0]
-    count = vocab[1]
-    vect = vector[1:]
-    word_vectors[word] = {'count':count, 'vector':vect}
+    count = int(vocab[1])
+    vect = [float(x) for x in vector[1:]]
+    norm = np.linalg.norm(vect)
+    
+    # Divide the vector by its norm squared, to rank in order of importance.
+    vect = [x/norm**2 for x in vect]
+    norm = 1/norm
+    
+    word_vectors.append({'word':word,
+                         'count':count,
+                         'vector':vect,
+                         'norm':norm})
   
-  for word,vector in word_vectors.items():
-    print(word,vector)
+  return sorted(word_vectors, key=lambda x:x['norm'], reverse=True)
+
+def calculate_word_overlaps(word_vectors):
+  output = []
+  for this in word_vectors:
+    output.append([])
+    for that in word_vectors:
+      output[-1].append(np.dot(this['vector'],that['vector']))
+  return np.array(output)
+
+def make_abstract(abstract,word_vectors):
+  output = abstract
+  words = abstract['string'].split()
+  indices = []
+  norm = 0
+  for word in set(words):
+    try:
+      i = [x['word'] for x in word_vectors].index(word)
+      indices.append(i)
+      norm = norm + word_vectors[i]['norm']**2
+    except ValueError:
+      pass
+  output['indices'] = indices
+  output['norm'] = np.sqrt(norm)
+  return output
+
+def get_overlap(this,that,word_overlaps):
+  '''
+  Calculates the overlap between two abstracts, using the word vectors.
+  '''
+  if len(this['indices'])>len(that['indices']):
+    return get_overlap(that,this,word_overlaps)
+  
+  matrix = []
+  for i in this['indices']:
+    matrix.append([])
+    for j in that['indices']:
+      matrix[-1].append(word_overlaps[i][j])
+  
+  norm = this['norm']*that['norm']
+  
+  return sum([max(line) for line in matrix]) / norm
+
+def main():
+  '''
+  Does stuff as what Mark wrote.
+  '''
+  
+  # Constants.
+  no_entries = 300
+  
+  # Set up data getter from server.
+  client = pymongo.MongoClient()
+  data_getter = client.pubstomp.arXiv_v1.find()
+  
+  # Grab the first no_entries entries.
+  data = []
+  for i,entry in enumerate(data_getter):
+    if i>=no_entries:
+      break
+    data.append(entry)
+  
+  # Extract abstracts.
+  # The abstract is the longest string in each description.
+  abstracts = []
+  for datum in data:
+    try:
+      string = clean_abstract(max(datum['description'],key=len))
+      abstracts.append({'string':string})
+    except KeyError('description'):
+      pass
+  
+  # Calculate word vectors from abstracts.
+  word_vectors = calculate_word_vectors(abstracts)
+  
+  print()
+  print('Generated word vectors')
+  
+  # Calculate overlaps between words.
+  word_overlaps = calculate_word_overlaps(word_vectors)
+  
+  print()
+  print('Generated word overlaps')
+  
+  # Convert abstracts into word lists.
+  abstracts = [make_abstract(abstract, word_vectors) for abstract in abstracts]
+  
+  print()
+  print('Abstracted abstracts')
+  
+  # Calculate overlap matrices.
+  overlaps = []
+  for i,abstracti in enumerate(abstracts):
+    overlaps.append([])
+    for j,abstractj in enumerate(abstracts):
+      overlap = get_overlap(abstracti, abstractj, word_overlaps)
+      
+      overlaps[-1].append(overlap)
+  
+  print()
+  print('Generated overlap matrix.')
+  
+  seaborn.heatmap(overlaps)
+  plt.show()
 
 if __name__=='__main__':
   main()
