@@ -149,7 +149,7 @@ def make_abstract(abstract,word_vectors):
   return output
 
 def calculate_abstract_vector(abstract,word_vectors):
-  output = np.sum([word_vectors[i]['vector'] for i in abstract['indices']])
+  output = sum([word_vectors[i]['vector'] for i in abstract['indices']])
   output = output / np.linalg.norm(output)
   return output
 
@@ -176,7 +176,7 @@ def main():
   '''
   
   # Constants.
-  no_entries = 30
+  no_entries = 3000
   
   # Set up data getter from server.
   client = pymongo.MongoClient()
@@ -220,6 +220,7 @@ def main():
   # Calculate abstract vectors.
   abstract_vectors = [calculate_abstract_vector(abstract, word_vectors) for abstract in abstracts]
   
+  '''
   # Calculate overlap matrix.
   overlaps = []
   for i,abstracti in enumerate(abstracts):
@@ -228,14 +229,13 @@ def main():
       overlap = get_overlap(abstracti, abstractj, word_overlaps)
       
       overlaps[-1].append(overlap)
+  '''
   
   # Calculate overlap matrix.
   overlaps = []
   for i in abstract_vectors:
     overlaps.append([])
     for j in abstract_vectors:
-      print(i)
-      print(j)
       overlaps[-1].append(np.dot(i,j))
   
   print()
