@@ -6,7 +6,7 @@ import copy
 
 class Document:
     def __init__(self, raw_dict):
-        self._raw = deepcopy(raw_dict)
+        self._raw = copy.deepcopy(raw_dict)
         self._arxiv_id = None
         self._date_submitted = None
         self._abstract = None

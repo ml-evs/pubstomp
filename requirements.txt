@@ -1,2 +1,3 @@
-pymongo
+pymongo>=3.5
 requests
+networkx>=2.2
