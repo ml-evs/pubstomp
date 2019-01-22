@@ -4,17 +4,48 @@
 
 Links:
 
-    https://www.openarchives.org/OAI/2.0/guidelines-harvester.htm
-    https://arxiv.org/help/oa/index
+    https://www.openarchives.org/OAI/2.0/guidelines-harvester.htm https://arxiv.org/help/oa/index
 
 """
 
 import datetime
 import time
 import logging
+import sys
 from xml.etree import ElementTree
 import pymongo
 import requests
+
+
+def start_scrape():
+    """ Start scraping arXiv, with collection name optionally
+    grabbed from sys.argv[1].
+
+    """
+    logging_setup()
+    try:
+        coll_name = sys.argv[1]
+    except IndexError:
+        coll_name = None
+    collection = mongo_setup(coll_name=coll_name)
+    recursive_arxiv_scrape(collection, hot_start=True,
+                           timeout=10)
+
+
+def logging_setup():
+    """ Set up logging to file and stdout. """
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger().handlers = []
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.INFO)
+    stdout_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)8s: %(message)s'))
+    logging.getLogger().addHandler(stdout_handler)
+
+    logname = 'arxiv_get.log'
+    file_handler = logging.FileHandler(logname, mode='a')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)8s: %(message)s'))
+    logging.getLogger().addHandler(file_handler)
 
 
 def mongo_setup(db_name='pubstomp', coll_name=None):
@@ -41,9 +72,11 @@ def mongo_setup(db_name='pubstomp', coll_name=None):
                 found = True
     else:
         if coll_name in db.list_collection_names():
-            logging.debug(f'Using existing collection {coll_name}.')
+            msg = f'Using existing collection on {coll_name}.'
+            logging.debug(msg)
 
-    logging.debug(f'Creating MongoDB collection {coll_name} inside database {db_name}.')
+    msg = f'Creating MongoDB collection {coll_name} inside database {db_name}.'
+    logging.debug(msg)
 
     return db[coll_name]
 
@@ -62,7 +95,8 @@ def mongo_clean(db_name='pubstomp'):
         if coll_name.startswith('arXiv_v'):
             db[coll_name].drop_indexes()
             db[coll_name].drop()
-            logging.debug(f'Dropped {coll_name}.')
+            msg = f'Dropped {coll_name}.'
+            logging.debug(msg)
 
 
 def parse_xml_record(xml_record):
@@ -119,27 +153,34 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
         hot_start (bool): query for documents added since last previous date existing
             in collection.
 
+    Returns:
+        int: the number of documents added.
 
     """
 
     last_date = None
     if hot_start:
         last_date = mongo_collection.find_one({}, sort=[('_id', pymongo.DESCENDING)])['header_date']
-        logging.debug(f'Found last date {last_date}')
+        msg = f'Found last date {last_date}'
+        logging.debug(msg)
 
     base_request = 'http://export.arxiv.org/oai2?verb=ListRecords'
     if resumption_token is not None:
         base_request += '&resumptionToken={}'.format(resumption_token)
-
     else:
         if last_date is not None:
             base_request += '&from={}'.format(last_date.strftime('%Y-%m-%d'))
 
         base_request += '&metadataPrefix=oai_dc'
 
-    logging.debug(f'Submitting request {base_request}')
+    msg = f'Submitting request {base_request}'
+    logging.debug(msg)
+
     request = requests.get(base_request)
-    logging.debug(f'Received response: {request.status_code}')
+
+    msg = f'Received response: {request.status_code}'
+    logging.debug(msg)
+
     # if the request failed, try again after timeout, but accumulate number of failures
     if request.status_code != 200:
         if num_failures >= 3:
@@ -161,7 +202,8 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
         complete_list_size = int(elem.attrib['completeListSize'])
 
     if new_resumption_token is not None:
-        logging.debug(f'Received resumptionToken {new_resumption_token}, with total query size {complete_list_size}')
+        msg = f'Received resumptionToken {new_resumption_token}, with total query size {complete_list_size}'
+        logging.debug(msg)
     else:
         logging.debug(f'No resumptionToken received.')
 
@@ -170,11 +212,16 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
         record = parse_xml_record(_record)
         record_batch.append(record)
 
-    logging.debug(f'Inserting {len(record_batch)} entries.')
+    msg = 'Inserting {len(record_batch)} entries.'
+    logging.debug(msg)
     mongo_collection.insert_many(record_batch)
     total_count = mongo_collection.count_documents({})
-    logging.info(f'{total_count} out of {complete_list_size} inserted.')
-    logging.debug(f'Sleeping for {timeout} s...')
+
+    msg = f'{total_count} out of {complete_list_size} inserted.'
+    logging.info(msg)
+    msg = f'Sleeping for {timeout} s...'
+    logging.debug(msg)
+
     time.sleep(timeout)
 
     if new_resumption_token is not None:
@@ -183,11 +230,8 @@ def recursive_arxiv_scrape(mongo_collection, resumption_token=None, timeout=10, 
                                       timeout=timeout)
 
     logging.info('Scrape complete!')
-    return
+    return total_count
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    collection = mongo_setup(coll_name='arXiv_v1')
-    recursive_arxiv_scrape(collection, hot_start=True,
-                           timeout=10)
+    start_scrape()
