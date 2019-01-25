@@ -8,6 +8,33 @@ import seaborn
 import matplotlib.pyplot as plt
 import numpy as np
 
+class GloveEngine(SimilarityEngine):
+  def __init__(self, documents):
+    '''
+    Train the model.
+    '''
+    abstracts = []
+    for document in documents:
+      string = clean_abstract(document.abstract)
+      abstracts.append({'string':string})
+    self.data = {'word_vectors': calculate_word_vectors(abstracts)}
+    self.word_vectors = self.data['word_vectors']
+  
+  @staticmethod
+  def parse_document(document):
+     '''
+     Parse a document.
+     '''
+     abstract_abstract = make_abstract(document.abstract, self.word_vectors)
+     vector = calculate_abstract_vector(abstract_abstract, self.word_vectors)
+     return vector
+  
+  def get_similarity(self, doca, docb):
+    '''
+    Get the similarity between two documents.
+    '''
+    return np.dot(doca.parsed, docb.parsed)
+
 def write_file(filename, lines):
   '''
   Write a file containing the given lines.
