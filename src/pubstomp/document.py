@@ -19,25 +19,18 @@ class Document:
         self._title = None
         self._parsed = None
 
-    @property
-    def parsed(self):
-        """ Returns the parsed form of this document, as requested by
-        sim_engine.
-
-        """
-        return self._parsed
-
-    @parsed.setter
     def parsed(self, sim_engine):
         """ Parses the document for the given SimilarityEngine. """
-        self._parsed = sim_engine.parse_document(self)
+        if not self._parsed:
+            self._parsed = sim_engine.parse_document(self)
+        return self._parsed
 
     @property
     def arxiv_id(self):
         """ Grabs the arXiv ID. """
         try:
             if self._arxiv_id is None:
-                self._arxiv_id = self._raw['arxiv_id']
+                self._arxiv_id = self._raw_json['arxiv_id']
         except KeyError:
             print('Paper is missing arXiv ID.')
         return self._arxiv_id
@@ -47,7 +40,7 @@ class Document:
         """ Gets longest item under the `description` key. """
         try:
             if self._abstract is None:
-                self._abstract = (max(self._raw['description'], key=len)
+                self._abstract = (max(self._raw_json['description'], key=len)
                                   .replace("\n", " ").strip())
         except KeyError:
             print('Paper is missing abstract!')
@@ -59,7 +52,7 @@ class Document:
         """ Grabs the title of the paper. """
         try:
             if self._title is None:
-                self._title = self._raw['title'].strip()
+                self._title = self._raw_json['title'].strip()
         except KeyError:
             print('Paper is missing title!')
         return self._title
