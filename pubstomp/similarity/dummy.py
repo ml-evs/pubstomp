@@ -1,8 +1,8 @@
 import random
-from similarity import SimilarityEngine
-from document import Document
+from pubstomp.similarity import SimilarityEngine
+from pubstomp.document import Document
 
-class DummyEngine(SimilarityEngine):
+class DummySimilarityEngine(SimilarityEngine):
     def __init__(self, documents):
         for doc in documents:
             assert isinstance(doc, Document)
@@ -13,5 +13,5 @@ class DummyEngine(SimilarityEngine):
         return 'totally unique string'
 
     def get_similarity(self, document_a, document_b):
-        print(document_a.parsed(self), document_b.parsed(self))
+        # print(document_a.parsed(self), document_b.parsed(self))
         return random.random()

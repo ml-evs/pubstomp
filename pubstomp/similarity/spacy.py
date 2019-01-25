@@ -1,11 +1,13 @@
-import spacy
-from similarity import Similarity
-from document import Document
-
-SPACY_EN_CORE_WEB_SM = spacy.load('en_core_web_sm')
+from pubstomp.similarity import SimilarityEngine
+from pubstomp.document import Document
 
 
-class SpacySimilarity(Similarity):
+class SpacySimilarityEngine(SimilarityEngine):
+    try:
+        import spacy
+        SPACY_EN_CORE_WEB_SM = spacy.load('en_core_web_sm')
+    except ImportError:
+        pass
     def get_similarity(self):
         """
         Given two documents (either the bare records or a Document class)
@@ -62,7 +64,7 @@ if __name__ == "__main__":
         squareRow = []
         for j, doc2 in enumerate(data):
             print(i,j)
-            similarity = SpacySimilarity(doc, doc2).similarity
+            similarity = SpacySimilarityEngine(doc, doc2).similarity
             squareRow.append(similarity)
             print(squareRow)
     # print(doc1.text, doc2.text, similarity)
@@ -70,4 +72,3 @@ if __name__ == "__main__":
     with open("square.txt", "w") as flines:
         flines.write("\n".join(" ".join(map(str, x)) for x in square))
     print(square)
-
