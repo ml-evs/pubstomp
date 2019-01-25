@@ -8,9 +8,8 @@ import pymongo as pm
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from document import Document
-from dummy import DummyEngine
-from glove_similarity import GloveEngine
+from pubstomp.document import Document
+from pubstomp.similarity import GloveSimilarityEngine, DummySimilarityEngine
 
 
 def pub_stomp(num_train_documents, num_test_documents, engine_type='test'):
@@ -40,9 +39,9 @@ def pub_stomp(num_train_documents, num_test_documents, engine_type='test'):
     test_set = [Document(doc) for doc in test_sample]
 
     if engine_type == 'test':
-        sim_engine = DummyEngine(training_set)
+        sim_engine = DummySimilarityEngine(training_set)
     elif engine_type == 'glove':
-        sim_engine = GloveEngine(training_set)
+        sim_engine = GloveSimilarityEngine(training_set)
     else:
         raise NotImplementedError
 
@@ -65,4 +64,4 @@ def pub_stomp(num_train_documents, num_test_documents, engine_type='test'):
 
 
 if __name__ == '__main__':
-    pub_stomp(1000, 100, engine_type='glove')
+    pub_stomp(1000, 100, engine_type='test')

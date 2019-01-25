@@ -7,7 +7,7 @@ with open("LICENSE") as flines:
     license = flines.read()
 
 with open("requirements.txt") as flines:
-    requirements = [line.strip() for line in flines] 
+    requirements = [line.strip() for line in flines]
 
 setup(
     name='pubstomp',
@@ -21,6 +21,5 @@ setup(
     setup_requires=['pytest_runner'],
     tests_require=['pytest'],
     install_requires=requirements,
-    packages=find_packages("src", exclude=('tests', 'examples','htmlcov')),
-    package_dir={'': 'src'}
+    packages=find_packages(exclude=('tests', 'examples','htmlcov')),
 )
