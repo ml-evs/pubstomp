@@ -2,15 +2,27 @@
 arXiv records.
 
 """
+
 import copy
 
 class Document:
-    def __init__(self, raw_dict):
-        self._raw = copy.deepcopy(raw_dict)
+    def __init__(self, json_doc):
+        self._raw_json = copy.deepcopy(json_doc)
         self._arxiv_id = None
         self._date_submitted = None
         self._abstract = None
         self._title = None
+        self._parsed = None
+
+    @property
+    def parsed(self, sim_engine):
+        """ Returns the parsed form of this document, as requested by
+        sim_engine.
+
+        """
+        if not self._parsed:
+            self._parsed = sim_engine.parse_document(self)
+        return self._parsed
 
     @property
     def arxiv_id(self):
@@ -32,9 +44,9 @@ class Document:
 
         return self._abstract
 
-
     @property
     def title(self):
+        """ Grabs the title of the paper. """
         try:
             if self._title is None:
                 self._title = self._raw['title'].strip()

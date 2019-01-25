@@ -1,42 +1,61 @@
 """ This module provides an abstract class for performing
-semantic/text-based similarity between two pieces of text
-e.g. arXiv abstracts.
+semantic/text-based similarity between pieces of text e.g. arXiv
+abstracts.
 
 """
 
-class Similarity:
-    def __init__(self, document_a, document_b):
-        """ Load text samples and any other required data into instance.
+
+class SimilarityEngine:
+    """ SimilarityEngine subclasses should take a list of Document
+    types, construct/load any models required for embedding in its
+    __init__, and prepare to accept pairs of Document types in the
+    get_similarity method. Should the subclass need to do any
+    expensive parsing of the Document type, it should implement the
+    parse_document staticmethod, which will store this parsed
+    representation under Document._parsed.
+
+    Attributes:
+        self.data (dict): a dictionary containing, with the subclass
+            developer's discretion, the data used to train the model
+            and the model itself, for some broad definition of model.
+
+    """
+    def __init__(self, documents):
+        """ Initialise the subclass on a list of documents.
 
         Parameters:
-            document_a (Document): the first entry to compare.
-            document_b (Document): the second entry to compare.
-
-        Keyword arguments:
-            model_type (str): the string name of the desired model, any of
-                'glove', 'spacy' or 'liam'.
-            pretrained_data: any pretrained data required for the model.
+            documents (:obj:`list` of :obj:`document.Document`): list
+                of documents required to construct the engine.
 
         """
-        self.document_a = document_a
-        self.document_b = document_b
 
-        self.text_a = self.document_a.abstract
-        self.text_b = self.document_b.abstract
+        raise NotImplementedError('Calling __init__ for base class Similarity, '
+                                  'use the relevant sub-class instead.')
 
-        self.set_pretrained_data()
+    @staticmethod
+    def parse_document(document):
+        """ If any further document parsing is required by the
+        subclass, do it here, and return the parsed document
+        to be stored under the Document.parsed property. If this
+        class is not implemented by the subclass, return the
+        original document.
 
-        self._similarity = None
-        self.get_similarity()
+        Parameters:
+            document (document.Document): the document to parse.
 
-    @property
-    def similarity(self):
-        if self._similarity is None:
-            self._similarity = self.get_similarity()
-        return self._similarity
+        """
+        return document
 
-    def set_pretrained_data(self):
-        raise NotImplementedError('Calling Base class set_pretrained_data!')
+    def get_similarity(self, document_a, document_b):
+        """ Calculate similarity between the two documents according to
+        the model embedded in the subclass.
 
-    def get_similarity(self, a_words, b_words):
+        Parameters:
+            document_a (document.Document): first document to compare.
+            document_b (document.Document): second document to compare.
+
+        Returns:
+            float: result of dot product in [0, 1].
+
+        """
         raise NotImplementedError('Calling Base class get_similarity!')
