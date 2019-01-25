@@ -33,7 +33,7 @@ class GloveEngine(SimilarityEngine):
     '''
     Get the similarity between two documents.
     '''
-    return np.dot(doca.parsed, docb.parsed)
+    return np.dot(doca.parsed(self), docb.parsed(self))
 
 def write_file(filename, lines):
   '''
