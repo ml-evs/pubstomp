@@ -29,8 +29,8 @@ class SimilarityEngine:
 
         """
 
-        raise NotImplementedError('Calling __init__ for base class Similarity, '
-                                  'use the relevant sub-class instead.')
+        raise NotImplementedError('Calling __init__ for base class Similarity,'
+                                  ' use the relevant sub-class instead.')
 
     @staticmethod
     def parse_document(document):
