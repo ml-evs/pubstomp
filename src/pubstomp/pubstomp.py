@@ -50,7 +50,7 @@ def pub_stomp(num_train_documents, num_test_documents, engine_type='test'):
     asymmetry_diff = []
     for ind, doc_a in enumerate(test_set):
         for jnd, doc_b in enumerate(test_set):
-            if ind >= jnd:
+            if ind > jnd:
                 continue
             similarity = sim_engine.get_similarity(doc_a, doc_b)
             heatmap[ind, jnd] = similarity
