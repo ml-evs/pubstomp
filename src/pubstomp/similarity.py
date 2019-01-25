@@ -14,24 +14,16 @@ class SimilarityEngine:
     parse_document staticmethod, which will store this parsed
     representation under Document._parsed.
 
+    Parameters:
+        documents (:obj:`list` of :obj:`document.Document`): list
+            of documents required to construct the engine.
+
     Attributes:
         self.data (dict): a dictionary containing, with the subclass
             developer's discretion, the data used to train the model
             and the model itself, for some broad definition of model.
 
     """
-    def __init__(self, documents):
-        """ Initialise the subclass on a list of documents.
-
-        Parameters:
-            documents (:obj:`list` of :obj:`document.Document`): list
-                of documents required to construct the engine.
-
-        """
-
-        raise NotImplementedError('Calling __init__ for base class Similarity,'
-                                  ' use the relevant sub-class instead.')
-
     @staticmethod
     def parse_document(document):
         """ If any further document parsing is required by the
