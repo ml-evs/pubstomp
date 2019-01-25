@@ -21,7 +21,7 @@ class Document:
 
     def parsed(self, sim_engine):
         """ Parses the document for the given SimilarityEngine. """
-        if not self._parsed:
+        if self._parsed is None:
             self._parsed = sim_engine.parse_document(self)
         return self._parsed
 

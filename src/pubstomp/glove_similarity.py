@@ -8,6 +8,8 @@ import seaborn
 import matplotlib.pyplot as plt
 import numpy as np
 
+from similarity import SimilarityEngine
+
 class GloveEngine(SimilarityEngine):
   def __init__(self, documents):
     '''
@@ -20,8 +22,7 @@ class GloveEngine(SimilarityEngine):
     self.data = {'word_vectors': calculate_word_vectors(abstracts)}
     self.word_vectors = self.data['word_vectors']
   
-  @staticmethod
-  def parse_document(document):
+  def parse_document(self, document):
      '''
      Parse a document.
      '''
@@ -160,8 +161,7 @@ def calculate_word_overlaps(word_vectors):
   return np.array(output)
 
 def make_abstract(abstract,word_vectors):
-  output = abstract
-  words = abstract['string'].split()
+  words = abstract.split()
   indices = []
   norm = 0
   for word in set(words):
@@ -171,6 +171,7 @@ def make_abstract(abstract,word_vectors):
       norm = norm + word_vectors[i]['norm']**2
     except ValueError:
       pass
+  output = {'string':abstract}
   output['indices'] = indices
   output['norm'] = np.sqrt(norm)
   return output
