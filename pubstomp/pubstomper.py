@@ -10,6 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from pubstomp.document import Document
 from pubstomp.similarity import GloveSimilarityEngine, DummySimilarityEngine
+import argparse
 
 
 def pub_stomp(num_train_documents, num_test_documents, engine_type='test'):
@@ -64,4 +65,10 @@ def pub_stomp(num_train_documents, num_test_documents, engine_type='test'):
 
 
 if __name__ == '__main__':
-    pub_stomp(1000, 100, engine_type='test')
+    parser = argparse.ArgumentParser(description='Stomps them pubs.')
+    parser.add_argument('--num_train', nargs='?', help='num_train help', const=100, default=100, type=int)
+    parser.add_argument('--num_test', nargs='?', help='num_test help', const=100, default=100, type=int)
+    parser.add_argument('--engine', nargs='?', help='engine help', const='test', default='test')
+    args = parser.parse_args()
+    
+    pub_stomp(args.num_train, args.num_test, args.engine)
