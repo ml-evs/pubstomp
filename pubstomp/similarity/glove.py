@@ -71,7 +71,6 @@ def calculate_word_vectors(abstracts, glove_dir):
   '''
 
   # Constants.
-  glove_dir = '/home/mark/hc-4d/GloVe/build/'
   glove_verbose = 2
 
   # Glove vocab_count options.
