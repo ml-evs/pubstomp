@@ -11,7 +11,7 @@ import numpy as np
 from pubstomp.similarity import SimilarityEngine
 
 class GloveSimilarityEngine(SimilarityEngine):
-  def __init__(self, documents):
+  def __init__(self, documents, glove_dir):
     '''
     Train the model.
     '''
@@ -19,7 +19,7 @@ class GloveSimilarityEngine(SimilarityEngine):
     for document in documents:
       string = clean_abstract(document.abstract)
       abstracts.append({'string':string})
-    self.data = {'word_vectors': calculate_word_vectors(abstracts)}
+    self.data = {'word_vectors': calculate_word_vectors(abstracts, glove_dir)}
     self.word_vectors = self.data['word_vectors']
 
   def parse_document(self, document):
@@ -65,7 +65,7 @@ def clean_abstract(abstract):
 
   return abstract
 
-def calculate_word_vectors(abstracts):
+def calculate_word_vectors(abstracts, glove_dir):
   '''
   Takes a list of abstracts, and returns word vectors for them.
   '''

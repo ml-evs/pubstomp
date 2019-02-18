@@ -13,7 +13,7 @@ from pubstomp.similarity import GloveSimilarityEngine, DummySimilarityEngine
 import argparse
 
 
-def pub_stomp(num_train_documents, num_test_documents, engine_type='test'):
+def pub_stomp(num_train_documents, num_test_documents, engine_type, glove_dir):
     """ Pull two samples of documents from the mongo and construct the
     similarity model on the training set of num_train_documents, then
     calculate pairwise similarities on the test set of
@@ -42,7 +42,7 @@ def pub_stomp(num_train_documents, num_test_documents, engine_type='test'):
     if engine_type == 'test':
         sim_engine = DummySimilarityEngine(training_set)
     elif engine_type == 'glove':
-        sim_engine = GloveSimilarityEngine(training_set)
+        sim_engine = GloveSimilarityEngine(training_set, glove_dir)
     else:
         raise NotImplementedError
 
@@ -69,6 +69,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_train', nargs='?', help='num_train help', const=100, default=100, type=int)
     parser.add_argument('--num_test', nargs='?', help='num_test help', const=100, default=100, type=int)
     parser.add_argument('--engine', nargs='?', help='engine help', const='test', default='test')
+    parser.add_argument('--glove_dir', nargs='?', help='glove_dir help')
     args = parser.parse_args()
     
-    pub_stomp(args.num_train, args.num_test, args.engine)
+    pub_stomp(args.num_train, args.num_test, args.engine, args.glove_dir)
